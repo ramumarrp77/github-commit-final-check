@@ -3,50 +3,66 @@ import PyPDF2
 import numpy as np
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
 
 # Initialize global variables
-embeddings = OpenAIEmbeddings()
-vectorstore = None
+embeddings_store = Chroma(collection_name="pdf_embeddings")
 
-# Load PDF and extract text
 
 def load_pdf(uploaded_file):
-    try:
-        pdf_reader = PyPDF2.PdfReader(uploaded_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() + '\n'
-        return text
-    except Exception as e:
-        raise ValueError(f"Failed to load PDF: {e}")
+    """
+    Load a PDF file and extract its text.
+    
+    Args:
+        uploaded_file: The PDF file to load.
+    
+    Returns:
+        str: The extracted text from the PDF.
+    """
+    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text() + '\n'
+    return text
 
-# Generate embeddings and store them locally
 
-def generate_embeddings(uploaded_file):
-    global vectorstore
-    pdf_text = load_pdf(uploaded_file)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=50)
-    doc_splits = text_splitter.split_text(pdf_text)
-    vectorstore = Chroma.from_texts(doc_splits, embeddings)
-    return vectorstore
+def generate_embeddings(pdf_text):
+    """
+    Generate embeddings for the given PDF text and store them locally.
+    
+    Args:
+        pdf_text (str): The text extracted from the PDF.
+    """
+    embeddings = OpenAIEmbeddings().embed_documents([pdf_text])
+    embeddings_store.add_documents([pdf_text], embeddings)
 
-# Search documents using semantic search
 
 def search_documents(query):
-    if vectorstore is None:
-        return []
-    results = vectorstore.similarity_search(query)
+    """
+    Search for relevant documents based on the query.
+    
+    Args:
+        query (str): The search query.
+    
+    Returns:
+        list: A list of relevant documents.
+    """
+    results = embeddings_store.similarity_search(query)
     return results
 
-# Generate response using retrieved documents
 
 def generate_response(query):
-    if vectorstore is None:
-        return "No documents available. Please upload a PDF and generate embeddings first."
-    retriever = vectorstore.as_retriever()
+    """
+    Generate a response based on the query and retrieved documents.
+    
+    Args:
+        query (str): The search query.
+    
+    Returns:
+        str: The generated response.
+    """
+    retriever = embeddings_store.as_retriever()
     llm = OpenAI(temperature=0)
     qa_chain = RetrievalQA(llm=llm, retriever=retriever)
     response = qa_chain.run(query)
