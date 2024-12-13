@@ -2,39 +2,59 @@ import streamlit as st
 import os
 from backend import load_pdf, generate_embeddings, search_documents, generate_response
 
+# Streamlit UI
+st.title("LangGraph PDF-Based RAG Agent")
+
 # Sidebar for OpenAI API Key
-st.sidebar.header('Configuration')
-openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+api_key = st.sidebar.text_input("Enter your OpenAI API Key:")
 
 # PDF Upload
-st.title('LangGraph PDF-Based RAG Agent')
-uploaded_files = st.file_uploader('Upload PDF files', type='pdf', accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload PDF files", type=['pdf'], accept_multiple_files=True)
 
 if uploaded_files:
     for uploaded_file in uploaded_files:
-        # Load PDF
-        pdf_text = load_pdf(uploaded_file)
-        st.write(f'Loaded {uploaded_file.name}')
-        st.text_area('PDF Content', pdf_text, height=300)
+        try:
+            # Load PDF
+            pdf_text = load_pdf(uploaded_file)
+            st.write(f"Loaded {uploaded_file.name}")
+            st.text_area("PDF Content", pdf_text, height=300)
+        except Exception as e:
+            st.error(f"Error loading {uploaded_file.name}: {e}")
 
-        # Generate embeddings
-        if st.button('Generate Embeddings'):
-            embeddings = generate_embeddings(pdf_text)
-            st.success('Embeddings generated and stored locally.')
+# Generate Embeddings
+if st.button("Generate Embeddings"):
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            try:
+                embeddings = generate_embeddings(uploaded_file)
+                st.success(f"Embeddings generated for {uploaded_file.name}")
+            except Exception as e:
+                st.error(f"Error generating embeddings for {uploaded_file.name}: {e}")
+    else:
+        st.warning("Please upload a PDF first.")
 
-# Query Input
-query = st.text_input('Enter your query:')
-
-if st.button('Search'):
+# Search Query
+query = st.text_input("Enter your search query:")
+if st.button("Search"):
     if query:
-        results = search_documents(query)
-        st.write('### Search Results:')
-        for result in results:
-            st.write(result)
+        try:
+            results = search_documents(query)
+            st.write("Search Results:")
+            for result in results:
+                st.write(result)
+        except Exception as e:
+            st.error(f"Error searching documents: {e}")
+    else:
+        st.warning("Please enter a query to search.")
 
 # Generate Response
-if st.button('Generate Response'):
+if st.button("Generate Response"):
     if query:
-        response = generate_response(query)
-        st.write('### Response:')
-        st.write(response)
+        try:
+            response = generate_response(query)
+            st.write("Response:")
+            st.write(response)
+        except Exception as e:
+            st.error(f"Error generating response: {e}")
+    else:
+        st.warning("Please enter a query to generate a response.")

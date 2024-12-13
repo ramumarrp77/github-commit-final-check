@@ -3,55 +3,51 @@ import PyPDF2
 import numpy as np
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
 
 # Initialize global variables
-embeddings_store = None
-vector_store = None
+embeddings = OpenAIEmbeddings()
+vectorstore = None
 
-# Define the state schema for LangGraph
-class GraphState:
-    def __init__(self, question: str, generation: str, documents: list):
-        self.question = question
-        self.generation = generation
-        self.documents = documents
+# Load PDF and extract text
 
-# Load PDF function
 def load_pdf(uploaded_file):
-    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-    text = ''
-    for page in pdf_reader.pages:
-        text += page.extract_text() + '\n'
-    return text
+    try:
+        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + '\n'
+        return text
+    except Exception as e:
+        raise ValueError(f"Failed to load PDF: {e}")
 
-# Generate embeddings function
-def generate_embeddings(pdf_text):
-    global embeddings_store, vector_store
-    # Initialize OpenAI embeddings
-    embeddings = OpenAIEmbeddings()  # Ensure OpenAI API Key is set in environment
-    # Generate embeddings
-    embedding_vector = embeddings.embed_documents([pdf_text])
-    # Store embeddings locally using Chroma
-    vector_store = Chroma.from_embeddings(embedding_vector)
-    embeddings_store = embeddings
+# Generate embeddings and store them locally
 
-# Search documents function
+def generate_embeddings(uploaded_file):
+    global vectorstore
+    pdf_text = load_pdf(uploaded_file)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=50)
+    doc_splits = text_splitter.split_text(pdf_text)
+    vectorstore = Chroma.from_texts(doc_splits, embeddings)
+    return vectorstore
+
+# Search documents using semantic search
+
 def search_documents(query):
-    global vector_store
-    if vector_store is None:
-        raise ValueError('Embeddings not generated yet.')
-    # Perform semantic search
-    results = vector_store.similarity_search(query)
+    if vectorstore is None:
+        return []
+    results = vectorstore.similarity_search(query)
     return results
 
-# Generate response function
+# Generate response using retrieved documents
+
 def generate_response(query):
-    global vector_store
-    if vector_store is None:
-        raise ValueError('Embeddings not generated yet.')
-    # Create a RetrievalQA chain
-    llm = OpenAI()  # Ensure OpenAI API Key is set in environment
-    qa_chain = RetrievalQA(llm=llm, retriever=vector_store.as_retriever())
+    if vectorstore is None:
+        return "No documents available. Please upload a PDF and generate embeddings first."
+    retriever = vectorstore.as_retriever()
+    llm = OpenAI(temperature=0)
+    qa_chain = RetrievalQA(llm=llm, retriever=retriever)
     response = qa_chain.run(query)
     return response
