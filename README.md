@@ -1,7 +1,7 @@
 # LangGraph PDF-Based RAG Agent
 
 ## Project Description
-The **LangGraph PDF-Based RAG Agent** is a local application designed to assist users in retrieving information from PDF documents. By leveraging semantic search and contextual response generation, this agent allows users to upload PDF files, query them using natural language, and receive informative responses with proper citations. The main problem this project addresses is the difficulty in extracting relevant information from large volumes of PDF documents efficiently.
+The LangGraph PDF-Based RAG Agent is a local application designed to assist users in retrieving information from PDF documents. By leveraging semantic search and contextual response generation, this agent allows users to upload PDF files, query them using natural language, and receive informative responses that cite the sources accurately. This project addresses the challenge of efficiently extracting relevant information from large volumes of PDF documents, making it easier for users to find the information they need.
 
 ## Key Features
 - **PDF Loading and Processing**: Users can upload and load PDF documents from local storage.
@@ -22,15 +22,15 @@ project-root/
 ```
 
 ### Key Files and Modules
-- **frontend.py**: Contains the Streamlit application that allows users to upload PDFs, enter queries, and display responses.
-- **backend.py**: Implements the PDF processing, embedding generation, semantic search, and response generation logic.
+- **frontend.py**: Contains the Streamlit application that allows users to upload PDFs, enter queries, and display results.
+- **backend.py**: Implements the core logic for processing PDFs, generating embeddings, and querying the documents.
 - **requirements.txt**: Lists all the necessary Python packages required to run the application.
 
 ## Setup and Installation
 
 ### Prerequisites
 - Python 3.7 or higher
-- An OpenAI API key (for using OpenAI models)
+- pip (Python package installer)
 
 ### Installation Steps
 1. **Clone the repository**:
@@ -39,8 +39,7 @@ project-root/
    cd langgraph-pdf-rag-agent
    </bash>
 
-2. **Set up the development environment**:
-   It is recommended to use a virtual environment. You can create one using:
+2. **Set up the development environment** (optional but recommended):
    <bash>
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\\Scripts\\activate`
@@ -59,31 +58,25 @@ project-root/
 ## Dependencies
 - `langgraph==0.2.53`
 - `streamlit`
-- `PyPDF2`
+- `tempfile`
+- `os`
+- `typing`
+- `langchain_openai`
 - `langchain_community`
 - `langchain`
-- `langchain_openai`
-- `langchain_core`
-- `langchain.prompts`
-- `typing_extensions`
-- `tempfile`
-- `logging`
-- `dataclasses`
-- `os`
-- `pathlib`
+- `chromadb`
 
 ## Configuration Instructions
-1. Open the application in your web browser (usually at `http://localhost:8501`).
-2. In the sidebar, enter your OpenAI API key to enable the agent\'s capabilities.
+- To use the application, you will need an OpenAI API key. Enter your API key in the sidebar of the Streamlit application to enable the agent's functionality.
 
 ## Usage Examples
-1. **Upload PDF Documents**: Click on the file uploader to select and upload your PDF documents.
-2. **Ask Questions**: Enter your question in the provided text input and click "Process PDFs" to retrieve relevant information.
-3. **View Responses**: The agent will display the generated response along with citations from the uploaded documents.
+1. **Upload PDF Documents**: Use the file uploader in the sidebar to upload one or more PDF documents.
+2. **Ask Questions**: After processing the PDFs, enter your question in the provided text input field to retrieve relevant information.
+3. **View Responses**: The application will display the generated response along with citations for the sources used.
 
 ## Troubleshooting Tips
-- If you encounter issues with PDF processing, ensure that the files are not corrupted and are in the correct format.
-- Make sure your OpenAI API key is valid and has the necessary permissions.
-- Check the console for any error messages that may indicate what went wrong during processing or querying.
+- Ensure that your OpenAI API key is valid and entered correctly.
+- If you encounter issues with PDF processing, check the format and content of the uploaded PDFs.
+- For any errors during execution, refer to the console output for debugging information.
 
 This README provides a comprehensive overview of the LangGraph PDF-Based RAG Agent, guiding users through setup, usage, and troubleshooting.
