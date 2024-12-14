@@ -1,4 +1,5 @@
 PyPDF2
+dataclasses
 langchain
 langchain_community
 langchain_core
@@ -6,3 +7,4 @@ langchain_openai
 langgraph
 python-dotenv
 streamlit
+typing_extensions

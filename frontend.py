@@ -1,62 +1,54 @@
 import streamlit as st
 from backend import PDFRAGAgent
+import os
 
-def main():
-    st.set_page_config(page_title="PDF RAG Agent", layout="wide")
-    
-    # Sidebar for API key
-    with st.sidebar:
-        st.title("Configuration")
-        api_key = st.text_input("Enter OpenAI API Key", type="password")
-        st.caption("Your API key is required for processing")
-        
-        # Initialize agent when API key is provided
-        if api_key:
-            agent = PDFRAGAgent(api_key)
-            st.session_state['agent'] = agent
-            st.success("Agent initialized successfully!")
-        else:
-            st.warning("Please enter your OpenAI API key to continue")
-            st.stop()
-    
-    st.title("PDF RAG Agent")
-    
-    # File upload section
-    uploaded_files = st.file_uploader(
-        "Upload PDF Documents", 
-        type=['pdf'], 
-        accept_multiple_files=True
-    )
-    
-    if uploaded_files:
-        # Process uploaded files
-        with st.spinner("Processing PDF documents..."):
+st.set_page_config(page_title="PDF RAG Agent", layout="wide")
+
+# Initialize session state
+if "rag_agent" not in st.session_state:
+    st.session_state.rag_agent = None
+
+# Sidebar for API key
+with st.sidebar:
+    st.title("Configuration")
+    api_key = st.text_input("Enter OpenAI API Key", type="password")
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
+        if st.session_state.rag_agent is None:
+            st.session_state.rag_agent = PDFRAGAgent()
+
+# Main content
+st.title("PDF RAG Agent")
+
+# File uploader
+uploaded_files = st.file_uploader("Upload PDF Documents", type=['pdf'], accept_multiple_files=True)
+
+if uploaded_files and api_key:
+    if st.button("Process PDFs"):
+        with st.spinner("Processing PDFs..."):
             for pdf_file in uploaded_files:
-                if pdf_file.name not in st.session_state.get('processed_files', []):
-                    agent.process_pdf(pdf_file)
-                    if 'processed_files' not in st.session_state:
-                        st.session_state.processed_files = []
-                    st.session_state.processed_files.append(pdf_file.name)
-        
-        st.success(f"Processed {len(uploaded_files)} PDF documents")
-        
-        # Query section
-        st.subheader("Ask Questions")
-        query = st.text_input("Enter your question about the documents")
-        
-        if query:
-            with st.spinner("Generating response..."):
-                response = agent.get_response(query)
-                
-                # Display response
-                st.markdown("### Response")
-                st.write(response['answer'])
-                
-                # Display sources
-                st.markdown("### Sources")
-                for source in response['sources']:
-                    st.markdown(f"- **{source['file']}** (Page {source['page']})")
-                    st.markdown(f"  > {source['text']}")
+                st.session_state.rag_agent.process_pdf(pdf_file)
+        st.success("PDFs processed successfully!")
 
-if __name__ == "__main__":
-    main()
+    # Query interface
+    st.subheader("Ask Questions")
+    user_query = st.text_input("Enter your question about the documents")
+    
+    if user_query:
+        with st.spinner("Generating response..."):
+            response, citations = st.session_state.rag_agent.query(user_query)
+            
+            # Display response
+            st.write("### Response")
+            st.write(response)
+            
+            # Display citations
+            if citations:
+                st.write("### Sources")
+                for citation in citations:
+                    st.write(f"- {citation}")
+
+elif not api_key:
+    st.warning("Please enter your OpenAI API key in the sidebar to continue.")
+elif not uploaded_files:
+    st.info("Please upload PDF documents to begin.")
